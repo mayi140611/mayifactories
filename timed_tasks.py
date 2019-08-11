@@ -26,7 +26,10 @@ logger.info('111This is a log info')
 logger.debug('Debugging')
 logger.warning('Warning exists')
 logger.info('Finish')
-
+"""
+读取数据，存入MongoDB
 stock2mongo.py [-h] [--ts_code TS_CODE] [--mode MODE]
                       [--start_date START_DATE] [--end_date END_DATE]
+"""
+
 
