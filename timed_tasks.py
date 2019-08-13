@@ -8,11 +8,12 @@
 
 定时任务
 """
+import pandas as pd
 import logging
 import os
 import sys
 sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils/config')
-from config import LOG_PATH, TS_CODES
+from config import LOG_PATH, STOCK_NAMES
 
 logger = logging.getLogger(__file__)
 logger.setLevel(level=logging.INFO)
@@ -30,11 +31,12 @@ logger.addHandler(handler)
 stock2mongo.py [-h] [--ts_code TS_CODE] [--mode MODE]
                       [--start_date START_DATE] [--end_date END_DATE]
 """
-for TS_CODE in TS_CODES:
-    logger.info(f'读取数据{TS_CODE}，存入MongoDB')
-    cmd = f"python finance/stock2mongo.py --ts_code {TS_CODE}"
+stock_series = pd.read_pickle('finance/data/stock_dict.pkl')
+for name in STOCK_NAMES:
+    logger.info(f'读取数据{name}，存入MongoDB')
+    cmd = f"python finance/stock2mongo.py --ts_code {stock_series.loc[name]}"
     r = os.system(cmd)
     if r == 0:
-        logger.info(f'读取数据{TS_CODE}，存入MongoDB，complete')
+        logger.info(f'读取数据{name}，存入MongoDB，complete')
     else:
-        logger.error(f'读取数据{TS_CODE}，存入MongoDB，failure')
+        logger.error(f'读取数据{name}，存入MongoDB，failure')
