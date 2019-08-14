@@ -14,7 +14,6 @@ from config import LOG_PATH, STOCK_NAMES, FUND_NAMES, INDEX_NAMES
 import sys
 sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils/config')
 from logging_utils import get_logger
-
 log_path = os.path.join(LOG_PATH, 'output.log')
 logger = get_logger(__file__, file_handler=True, log_path=log_path)
 
