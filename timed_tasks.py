@@ -9,22 +9,14 @@
 定时任务
 """
 import pandas as pd
-import logging
 import os
+from config import LOG_PATH, STOCK_NAMES, FUND_NAMES, INDEX_NAMES
 import sys
 sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils/config')
-from config import LOG_PATH, STOCK_NAMES
+from logging_utils import get_logger
 
-logger = logging.getLogger(__file__)
-logger.setLevel(level=logging.INFO)
-handler = logging.FileHandler(os.path.join(LOG_PATH, 'output.log'))
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-# logger.info('111This is a log info')
-# logger.debug('Debugging')
-# logger.warning('Warning exists')
-# logger.info('Finish')
+log_path = os.path.join(LOG_PATH, 'output.log')
+logger = get_logger(__file__, file_handler=True, log_path=log_path)
 
 """
 读取数据，存入MongoDB
@@ -35,6 +27,22 @@ stock_series = pd.read_pickle('finance/data/stock_dict.pkl')
 for name in STOCK_NAMES:
     logger.info(f'读取数据{name}，存入MongoDB')
     cmd = f"python finance/stock2mongo.py --ts_code {stock_series.loc[name]}"
+    r = os.system(cmd)
+    if r == 0:
+        logger.info(f'读取数据{name}，存入MongoDB，complete')
+    else:
+        logger.error(f'读取数据{name}，存入MongoDB，failure')
+for name in FUND_NAMES:
+    logger.info(f'读取数据{name}，存入MongoDB')
+    cmd = f"python finance/stock2mongo.py --ts_code {name} --mode fund"
+    r = os.system(cmd)
+    if r == 0:
+        logger.info(f'读取数据{name}，存入MongoDB，complete')
+    else:
+        logger.error(f'读取数据{name}，存入MongoDB，failure')
+for name in INDEX_NAMES:
+    logger.info(f'读取数据{name}，存入MongoDB')
+    cmd = f"python finance/stock2mongo.py --ts_code {name} --mode index"
     r = os.system(cmd)
     if r == 0:
         logger.info(f'读取数据{name}，存入MongoDB，complete')
