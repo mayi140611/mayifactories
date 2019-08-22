@@ -10,8 +10,10 @@
 """
 import pandas as pd
 import os
+
 from config import LOG_PATH, STOCK_NAMES, FUND_NAMES, INDEX_NAMES
 import sys
+# print(sys.path)
 sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils/config')
 from logging_utils import get_logger
 log_path = os.path.join(LOG_PATH, 'output.log')

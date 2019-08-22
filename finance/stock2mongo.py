@@ -7,8 +7,10 @@
 @time: 2019-08-11 23:01
 """
 import os
-from config import LOG_PATH
 import sys
+# sys.path.append(os.path.abspath('.'))
+# print(sys.path)
+from config import LOG_PATH
 sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils/db')
 from pymongo_wrapper import PyMongoWrapper
 sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils/finance')
