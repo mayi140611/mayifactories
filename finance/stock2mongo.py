@@ -8,8 +8,7 @@
 """
 import os
 import sys
-# sys.path.append(os.path.abspath('.'))
-# print(sys.path)
+sys.path.append(sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from config import LOG_PATH
 sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils/db')
 from pymongo_wrapper import PyMongoWrapper

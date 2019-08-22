@@ -10,7 +10,7 @@
 """
 import os
 import sys
-# sys.path.append(os.path.abspath('.'))
+sys.path.append(sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 # print(sys.path)
 from config import LOG_PATH, portfolio
 sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils/db')
@@ -22,6 +22,8 @@ from datetime import datetime, timedelta
 import sys
 sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils/config')
 from logging_utils import get_logger
+sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils')
+from email_ops import send_email
 import pandas as pd
 
 log_path = os.path.join(LOG_PATH, 'output.log')
@@ -49,34 +51,7 @@ if __name__ == '__main__':
     total_val = fund_val + stock_val
     logger.info(f'total_val: {total_val}, fund_val: {fund_val}, stock_val: {stock_val}')
 
-    import smtplib
-    from email.mime.multipart import MIMEMultipart
-    from email.mime.text import MIMEText
-
-    # email
-    smtpserver = 'smtp.163.com'
-    username = '13585581243@163.com'
-    password = 'Lyg140611'  # 授权码
-    sender = '13585581243@163.com'
-    # 收件人为多个收件人
-    receiver = ['13585581243@163.com']
-
     subject = 'portfolio_val'
-    # 下面的主题，发件人，收件人，日期是显示在邮件页面上的。
-    msg = MIMEMultipart('mixed')
-    msg['Subject'] = subject
-    msg['From'] = 'ian@163.com <ian@163.com>'
-    # 收件人为多个收件人,通过join将列表转换为以;为间隔的字符串
-    msg['To'] = ";".join(receiver)
-    msg['Date']='2019-08-16'
-
     # 构造文字内容
-    text = f'total_val: {total_val}, fund_val: {fund_val}, stock_val: {stock_val}'
-    text_plain = MIMEText(text, 'plain', 'utf-8')
-    msg.attach(text_plain)
-    # 发送邮件
-    smtp = smtplib.SMTP()
-    smtp.connect('smtp.163.com')
-    smtp.login(username, password)
-    smtp.sendmail(sender, receiver, msg.as_string())
-    smtp.quit()
+    text = f'total_val1: {total_val}, fund_val: {fund_val}, stock_val: {stock_val}'
+    send_email(subject, text)
