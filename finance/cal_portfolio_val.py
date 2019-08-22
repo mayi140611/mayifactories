@@ -53,5 +53,7 @@ if __name__ == '__main__':
 
     subject = 'portfolio_val'
     # 构造文字内容
-    text = f'total_val1: {total_val}, fund_val: {fund_val}, stock_val: {stock_val}'
+    rr = '\n'.join([f'{i[0]} {i[1]} {i[2]} {str(i[3])[:10]}' for i in rlist])
+    logger.info(rr)
+    text = f'{rr}\ntotal_val1: {total_val}, fund_val: {fund_val}, stock_val: {stock_val}'
     send_email(subject, text)
