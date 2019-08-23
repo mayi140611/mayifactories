@@ -1,0 +1,2 @@
+# 每周一至周五21:00执行
+0 21 * * 1-5 source /Users/luoyonggui/.zshrc && cd /Users/luoyonggui/PycharmProjects/mayifactories && python timed_tasks.py
