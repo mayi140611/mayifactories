@@ -24,6 +24,7 @@ sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils/config
 from logging_utils import get_logger
 sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils')
 from email_ops import send_email
+import html_ops
 import pandas as pd
 from matplotlib import pyplot as plt
 plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
@@ -54,43 +55,29 @@ if __name__ == '__main__':
     total_val = fund_val + stock_val
     logger.info(f'total_val: {total_val}, fund_val: {fund_val}, stock_val: {stock_val}')
     # 图片
-    labels = ["A难度水平", 'B难度水平', 'C难度水平', 'D难度水平']
-    students = [0.35, 0.15, 0.20, 0.30]
-    colors = ['red', 'green', 'blue', 'yellow']
-    explode = (0.1, 0.1, 0, 0)
-    plt.pie(students, explode=explode, labels=labels, autopct='%3.2f%%', startangle=45, shadow=True,
-            colors=colors)
+    labels = [i[0] for i in rlist]
+    students = [i[1]*i[2] for i in rlist]
+    plt.pie(students, labels=labels, autopct='%3.2f%%', startangle=45, shadow=True,
+            )
     # 设置x，y轴刻度一致，这样饼图才能是圆的
     plt.axis('equal')
-    plt.title('选择不同难度测试试卷的学生百分比')
+    plt.title('百分比')
     img_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'tmp', 'a.png')
     plt.savefig(img_path)
-    import base64
-    with open(img_path, mode='rb') as f:
-        base64_data = base64.b64encode(f.read()).decode()
     subject = 'portfolio_val'
     # 构造文字内容
     rr = '\n'.join([f'{i[0]} {i[1]} {i[2]} {str(i[3])[:10]}' for i in rlist])
     logger.info(rr)
     text = f'total_val1: {total_val}, fund_val: {fund_val}, stock_val: {stock_val}'
-    from PIL import Image
-    im = Image.open(img_path)
-    html = f"""
-        <html>  
-          <head>
-            <meta http-equiv="Content-Type" content="text/html; charset=utf8" />
-            <title>report报告</title>
-          </head>  
-          <body>  
-            <p>Hi!<br>  
-               How are you?<br>  
-               Here is the <a href="http://www.baidu.com">link</a> you wanted.<br> 
-               {rr}<br>
-               {text}<br>
-                <img src="data:image/png;base64,{base64_data}"
-alt="Base64 encoded image" width="{im.size[0]}" height="{im.size[1]}"/>
-            </p> 
-          </body>  
-        </html>  
-        """
-    send_email(subject, text, html)
+    d = html_ops.create_html('report报告222')
+
+    d('body').append('<p>Hello world222!</p><br>')
+    d('body').append('Here is the <a href="http://www.baidu.com">link</a> you wanted.<br>')
+    table = html_ops.create_table(['code', 'close', 'vol', 'trade_date'], rlist)
+    d('body').append(table)
+    d('body').append('<br>')
+    d('body').append(f'{text}<br>')
+    img = html_ops.create_img(img_path)
+    d('body').append(img)
+
+    send_email(subject, text, d.outer_html())
