@@ -39,7 +39,7 @@ if __name__ == '__main__':
     mongo = PyMongoWrapper()
     rlist = []
     stock_series = pd.read_pickle('finance/data/stock_dict.pkl')
-    for t in ['fund', 'stock']:
+    for t in ['fund', 'stock', 'otc_fund']:
         for i in portfolio[t]:
             tname = i[0] if t == 'fund' else stock_series.loc[i[0]]
             table = mongo.getCollection('finance', tname)
