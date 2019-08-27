@@ -67,11 +67,13 @@ if __name__ == '__main__':
             dd['close'] = d['dwjz']
             df = pd.DataFrame(columns=['trade_date', 'close'])
             df = df.append(dd, ignore_index=True)
+            df.set_index('trade_date', inplace=True)
+            print(df)
             # print(d, dd, df)
 
         logger.info(f'共请求到{df.shape[0]}条数据！')
         if df.shape[0] > 0:
-            mongo.insertDataframe(df, 'finance', args.ts_code)
+            mongo.insertDataframe(df, 'finance', args.ts_code, df_index='trade_date')
             # table.insert_many(df2dicts_stock(df))
         else:
             logger.warning('请求数据为空！')

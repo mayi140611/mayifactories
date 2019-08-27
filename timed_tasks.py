@@ -24,31 +24,31 @@ logger = get_logger(__file__, file_handler=True, log_path=log_path)
 stock2mongo.py [-h] [--ts_code TS_CODE] [--mode MODE]
                       [--start_date START_DATE] [--end_date END_DATE]
 """
-# stock_series = pd.read_pickle('finance/data/stock_dict.pkl')
-# for name in STOCK_NAMES:
-#     logger.info(f'读取数据{name}，存入MongoDB')
-#     cmd = f"python finance/stock2mongo.py --ts_code {stock_series.loc[name]}"
-#     r = os.system(cmd)
-#     if r == 0:
-#         logger.info(f'读取数据{name}，存入MongoDB，complete')
-#     else:
-#         logger.error(f'读取数据{name}，存入MongoDB，failure')
-# for name in FUND_NAMES:
-#     logger.info(f'读取数据{name}，存入MongoDB')
-#     cmd = f"python finance/stock2mongo.py --ts_code {name} --mode fund"
-#     r = os.system(cmd)
-#     if r == 0:
-#         logger.info(f'读取数据{name}，存入MongoDB，complete')
-#     else:
-#         logger.error(f'读取数据{name}，存入MongoDB，failure')
-# for name in INDEX_NAMES:
-#     logger.info(f'读取数据{name}，存入MongoDB')
-#     cmd = f"python finance/stock2mongo.py --ts_code {name} --mode index"
-#     r = os.system(cmd)
-#     if r == 0:
-#         logger.info(f'读取数据{name}，存入MongoDB，complete')
-#     else:
-#         logger.error(f'读取数据{name}，存入MongoDB，failure')
+stock_series = pd.read_pickle('finance/data/stock_dict.pkl')
+for name in STOCK_NAMES:
+    logger.info(f'读取数据{name}，存入MongoDB')
+    cmd = f"python finance/stock2mongo.py --ts_code {stock_series.loc[name]}"
+    r = os.system(cmd)
+    if r == 0:
+        logger.info(f'读取数据{name}，存入MongoDB，complete')
+    else:
+        logger.error(f'读取数据{name}，存入MongoDB，failure')
+for name in FUND_NAMES:
+    logger.info(f'读取数据{name}，存入MongoDB')
+    cmd = f"python finance/stock2mongo.py --ts_code {name} --mode fund"
+    r = os.system(cmd)
+    if r == 0:
+        logger.info(f'读取数据{name}，存入MongoDB，complete')
+    else:
+        logger.error(f'读取数据{name}，存入MongoDB，failure')
+for name in INDEX_NAMES:
+    logger.info(f'读取数据{name}，存入MongoDB')
+    cmd = f"python finance/stock2mongo.py --ts_code {name} --mode index"
+    r = os.system(cmd)
+    if r == 0:
+        logger.info(f'读取数据{name}，存入MongoDB，complete')
+    else:
+        logger.error(f'读取数据{name}，存入MongoDB，failure')
 fund_otc_series = pd.read_pickle('finance/data/fund_otc_series.pkl')
 for name in OTC_FUND_NAMES:
     logger.info(f'读取数据{name}，存入MongoDB')
@@ -59,5 +59,5 @@ for name in OTC_FUND_NAMES:
     else:
         logger.error(f'读取数据{name}，存入MongoDB，failure')
 # ---------------------
-# cmd = f"python finance/cal_portfolio_val.py"
-# r = os.system(cmd)
+cmd = f"python finance/cal_portfolio_val.py"
+r = os.system(cmd)
