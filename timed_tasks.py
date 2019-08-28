@@ -61,3 +61,6 @@ for name in OTC_FUND_NAMES:
 # ---------------------
 cmd = f"python finance/cal_portfolio_val.py"
 r = os.system(cmd)
+# ---------------------
+cmd = f"python finance/stock_daily_basic2mongo.py"
+r = os.system(cmd)
