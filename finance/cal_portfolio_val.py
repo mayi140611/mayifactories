@@ -39,13 +39,21 @@ if __name__ == '__main__':
     mongo = PyMongoWrapper()
     rlist = []
     stock_series = pd.read_pickle('finance/data/stock_dict.pkl')
+    fund_otc_series = pd.read_pickle('finance/data/fund_otc_series.pkl')
     for t in ['fund', 'stock', 'otc_fund']:
         for i in portfolio[t]:
-            tname = i[0] if t == 'fund' else stock_series.loc[i[0]]
-            table = mongo.getCollection('finance', tname)
-            r = list(mongo.findAll(table, fieldlist=['trade_date', 'close', 'pct_chg'], sort=[('trade_date', -1)], limit=1))[0]
-            rlist.append((i[0], r['close'], i[1], r['pct_chg'], t, r['trade_date']))
-
+            if t == 'fund':
+                tname = i[0]
+            elif t == 'stock':
+                tname = stock_series.loc[i[0]]
+            else:
+                tname = fund_otc_series.loc[i[0]]
+            try:
+                table = mongo.getCollection('finance', tname)
+                r = list(mongo.findAll(table, fieldlist=['trade_date', 'close', 'pct_chg'], sort=[('trade_date', -1)], limit=1))[0]
+                rlist.append((i[0], r['close'], i[1], r['pct_chg'], t, r['trade_date']))
+            except Exception as e:
+                print(tname, str(e))
     df = pd.DataFrame(rlist, columns=['code', 'close', 'vol', '涨幅', '类型', 'trade_date'])
     df['市值'] = df['close'] * df['vol']
     df['change'] = ((df['close'] - df['close']/(1+df['涨幅']/100)) * df['vol']).map(int)

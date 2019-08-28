@@ -44,10 +44,10 @@ if __name__ == '__main__':
             mongo.setUniqueIndex('finance', args.ts_code, 'trade_date')
     else:
         logger.info(f'{args.ts_code}表在数据库中存在，update表数据！')
-
-        r = mongo.findAll(table, fieldlist=['trade_date'], sort=[('trade_date', -1)], limit=1)
-        d = list(r)[0]['trade_date']
-        args.start_date = (d + timedelta(days=1)).strftime('%Y%m%d')
+        if args.mode in ['stock', 'index', 'fund']:
+            r = mongo.findAll(table, fieldlist=['trade_date'], sort=[('trade_date', -1)], limit=1)
+            d = list(r)[0]['trade_date']
+            args.start_date = (d + timedelta(days=1)).strftime('%Y%m%d')
     try:
         if args.mode in ['stock', 'index', 'fund']:
             df = daily(args.ts_code, start_date=args.start_date, end_date=args.end_date, mode=args.mode)
@@ -55,7 +55,7 @@ if __name__ == '__main__':
             import requests
             import json
             import pandas as pd
-
+            from pyquery import PyQuery as pq
             headers = {
                 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.79 Safari/537.36 Maxthon/5.2.1.6000',
             }
@@ -64,8 +64,14 @@ if __name__ == '__main__':
             d = json.loads(s[s.find('{'):(s.find('}') + 1)])
             dd = dict()
             dd['trade_date'] = datetime.strptime(d['jzrq'], '%Y-%m-%d')
-            dd['close'] = d['dwjz']
-            df = pd.DataFrame(columns=['trade_date', 'close'])
+            dd['close'] = float(d['dwjz'])
+            r = requests.get(f'http://fund.eastmoney.com/{args.ts_code}.html')
+            r.encoding = 'utf8'
+            root = pq(r.text)
+            d1 = root(
+                '#body > div:nth-child(12) > div > div > div.fundDetail-main > div.fundInfoItem > div.dataOfFund > dl.dataItem02 > dd.dataNums > span.ui-font-middle.ui-num')
+            dd['pct_chg'] = float(d1.text()[:-1])
+            df = pd.DataFrame(columns=['trade_date', 'close', 'pct_chg'])
             df = df.append(dd, ignore_index=True)
             df.set_index('trade_date', inplace=True)
             print(df)
