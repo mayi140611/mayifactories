@@ -5,3 +5,6 @@
 0 3 * * 1-5 source /Users/luoyonggui/.zshrc && cd /Users/luoyonggui/PycharmProjects/mayifactories && python timed_tasks.py
 0 5 * * 1-5 source /Users/luoyonggui/.zshrc && cd /Users/luoyonggui/PycharmProjects/mayifactories && python timed_tasks.py
 0 7 * * 1-5 source /Users/luoyonggui/.zshrc && cd /Users/luoyonggui/PycharmProjects/mayifactories && python timed_tasks.py
+0 16 * * 1-5 source /Users/luoyonggui/.zshrc && cd /Users/luoyonggui/PycharmProjects/mayifactories && python timed_tasks.py
+0 17 * * 1-5 source /Users/luoyonggui/.zshrc && cd /Users/luoyonggui/PycharmProjects/mayifactories && python timed_tasks.py
+0 18 * * 1-5 source /Users/luoyonggui/.zshrc && cd /Users/luoyonggui/PycharmProjects/mayifactories && python timed_tasks.py

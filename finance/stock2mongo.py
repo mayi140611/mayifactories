@@ -13,7 +13,7 @@ from config import LOG_PATH
 sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils/db')
 from pymongo_wrapper import PyMongoWrapper
 sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils/finance')
-from stock_wrapper import df2dicts_stock, daily
+from stock_wrapper import daily
 import argparse
 from datetime import datetime, timedelta
 import sys
@@ -80,7 +80,6 @@ if __name__ == '__main__':
         logger.info(f'共请求到{df.shape[0]}条数据！')
         if df.shape[0] > 0:
             mongo.insertDataframe(df, 'finance', args.ts_code, df_index='trade_date')
-            # table.insert_many(df2dicts_stock(df))
         else:
             logger.warning('请求数据为空！')
     except Exception as e:
