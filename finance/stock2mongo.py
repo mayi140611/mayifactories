@@ -41,7 +41,7 @@ if __name__ == '__main__':
         logger.info(f'{args.ts_code}表在数据库中不存在，新建表插入！')
 
         if args.mode in ['stock', 'index', 'fund', 'otc_fund']:
-            mongo.setUniqueIndex('finance', args.ts_code, 'trade_date')
+            mongo.setUniqueIndex('finance', args.ts_code, ['trade_date'])
     else:
         logger.info(f'{args.ts_code}表在数据库中存在，update表数据！')
         if args.mode in ['stock', 'index', 'fund']:
