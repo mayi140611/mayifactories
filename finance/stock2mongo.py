@@ -59,18 +59,26 @@ if __name__ == '__main__':
             headers = {
                 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.79 Safari/537.36 Maxthon/5.2.1.6000',
             }
-            r = requests.get(f'http://fundgz.1234567.com.cn/js/{args.ts_code}.js', headers=headers)
-            s = r.text
-            d = json.loads(s[s.find('{'):(s.find('}') + 1)])
+            # r = requests.get(f'http://fundgz.1234567.com.cn/js/{args.ts_code}.js', headers=headers)
+            # s = r.text
+            # d = json.loads(s[s.find('{'):(s.find('}') + 1)])
+            # dd = dict()
+            # dd['trade_date'] = datetime.strptime(d['jzrq'], '%Y-%m-%d')
+            # dd['close'] = float(d['dwjz'])
             dd = dict()
-            dd['trade_date'] = datetime.strptime(d['jzrq'], '%Y-%m-%d')
-            dd['close'] = float(d['dwjz'])
             r = requests.get(f'http://fund.eastmoney.com/{args.ts_code}.html')
             r.encoding = 'utf8'
             root = pq(r.text)
             d1 = root(
                 '#body > div:nth-child(12) > div > div > div.fundDetail-main > div.fundInfoItem > div.dataOfFund > dl.dataItem02 > dd.dataNums > span.ui-font-middle.ui-num')
             dd['pct_chg'] = float(d1.text()[:-1])
+            d1 = root(
+                '#body > div:nth-child(12) > div > div > div.fundDetail-main > div.fundInfoItem > div.dataOfFund > dl.dataItem02 > dd.dataNums > span.ui-font-large.ui-num')
+            dd['close'] = float(d1.text())
+            d1 = root(
+                '#body > div:nth-child(12) > div > div > div.fundDetail-main > div.fundInfoItem > div.dataOfFund > dl.dataItem02 > dt > p'
+                )
+            dd['trade_date'] = datetime.strptime(d1.text()[-11:-1], '%Y-%m-%d')
             df = pd.DataFrame(columns=['trade_date', 'close', 'pct_chg'])
             df = df.append(dd, ignore_index=True)
             df.set_index('trade_date', inplace=True)

@@ -43,7 +43,7 @@ if __name__ == '__main__':
     groups = ['fund', 'stock', 'otc_fund']
 
     sum_val = sum_loss = 0
-    cash = 70842 + 70669 + 689900 + 2125
+    cash = 69755 + 70669 + 689900 + 2125
     d = html_ops.create_html(f'report报告')
     t1 = html_ops.create_label('h1', f'report<sub>{datetime.now().date()}</sub>')
     d('body').append(t1)
