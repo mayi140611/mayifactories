@@ -58,9 +58,3 @@ for name in OTC_FUND_NAMES:
         logger.info(f'读取数据{name}，存入MongoDB，complete')
     else:
         logger.error(f'读取数据{name}，存入MongoDB，failure')
-# ---------------------
-cmd = f"python finance/cal_portfolio_val.py"
-r = os.system(cmd)
-# ---------------------
-cmd = f"python finance/stock_daily_basic2mongo.py"
-r = os.system(cmd)

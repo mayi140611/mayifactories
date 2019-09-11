@@ -43,7 +43,7 @@ if __name__ == '__main__':
     groups = ['fund', 'stock', 'otc_fund']
 
     sum_val = sum_loss = 0
-    cash = pd.Series({'zlt': 66752, 'pingan': 63621, 'amber': 689900, 'ian': 17125}).sum()
+    cash = pd.Series({'zlt': 66752, 'pingan': 30000, 'amber': 689900, 'ian': 17125}).sum()
 
     d = html_ops.create_html(f'report报告')
     t1 = html_ops.create_label('h1', f'report<sub>{datetime.now().date()}</sub>')
