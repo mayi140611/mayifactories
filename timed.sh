@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 python timed_tasks.py
 # 计算资产价格
 python finance/cal_portfolio_val.py
