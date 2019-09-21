@@ -6,6 +6,8 @@
 @file: base.py
 @time: 2019-09-16 16:51
 """
+import pandas as pd
+import os
 import sys
 sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils/db')
 from pymongo_wrapper import PyMongoWrapper
@@ -114,7 +116,7 @@ def add_transactions():
         ll = f.readlines()
     ll = [s.strip()[2:-2].split(', ') for s in ll]
     mongo = PyMongoWrapper()
-    cols = 'trade_date account target price num fee_rate'.split()
+    cols = 'trade_date account target price num fee_rate type'.split()
     r = []
     for i in ll:
         # 买卖成本在买入时都算进去，卖出时不算成本
@@ -130,6 +132,26 @@ def add_transactions():
     mongo.insertDataframe(df, 'finance', 'transactions')
 
 
+FILE_DIR = os.path.dirname(os.path.abspath(__file__))
+stock_series = pd.read_pickle(os.path.join(FILE_DIR, 'data/stock_dict.pkl'))
+fund_otc_series = pd.read_pickle(os.path.join(FILE_DIR, 'data/fund_otc_series.pkl'))
+series = stock_series.append(fund_otc_series)
+
+
+def get_last_day_market_val(target):
+    """获取最近一日市值"""
+    if target == 'cash':
+        return datetime.now().date(), 1
+    if any([target.endswith('.SZ'), target.endswith('.SH')]):
+        tname = target
+    else:
+        tname = series.loc[target]
+    table = mongo.getCollection('finance', tname)
+    r = list(mongo.findAll(table, fieldlist=['trade_date', 'close', 'pct_chg'], sort=[('trade_date', -1)], limit=1))[0]
+    return r['trade_date'].date(), r['close']
+    # rlist.append((i[0], r['close'], i[1], r['pct_chg'], g, r['trade_date']))
+
+
 if __name__ == '__main__':
     # add_transactions()
     transaction_list = []
@@ -138,27 +160,33 @@ if __name__ == '__main__':
     cols = 'trade_date account target price num fee_rate'.split()
     rs = mongo.findAll(table, fieldlist=cols, sort=[('trade_date', 1)])
 
-    import pandas as pd
+
     df = pd.DataFrame(rs)
     df['trade_date'] = df['trade_date'].dt.date
     df.set_index('trade_date', inplace=True)
+
     df['cost'] = df['price'] * df['num'] * (1 + df.fee_rate)
 
     # 计算截止某日的账户切片
     df_ac = df.groupby(['account', 'target'])['num', 'cost'].sum()
+    df_ac.reset_index(inplace=True)
+    df_ac['price'] = 0
+    df_ac['tdate'] = 0
     # 获取某一天的市值
-    for line in df[['account', 'target']].drop_duplicates().itertuples():
-        if line.account == 'cash':
-            continue
-        if line.account == 'PA':
-            pass
-        if line.account == 'ZLT':
-            pass
-        if line.account in ['TTA', 'TTJ']:
-            pass
-
-
+    for i in df['target'].unique():
+        df_ac.loc[df_ac.target==i, ['tdate', 'price']] = get_last_day_market_val(i)
+    df_ac['type'] = 'cash'
+    df_ac.loc[(df_ac.account=='PA') & (df_ac.target!='cash'), 'type'] = 'STOCK'
+    df_ac.loc[(df_ac.account=='ZLT') & (df_ac.target!='cash'), 'type'] = 'FUND'
+    df_ac.loc[(df_ac.account.isin(['TTJ', 'TTA'])) & (df_ac.target!='cash'), 'type'] = 'OTC_FUND'
+    # print(df_ac)
+    df_ac['market_val'] = df_ac.num * df_ac.price
+    df_ac['profit'] = df_ac['market_val'] - df_ac['cost']
     print(df_ac)
+    print(df_ac.groupby(['account'])['market_val'].sum())
+    print(df_ac.groupby(['type'])['market_val'].sum())
+    print(f'profit: {df_ac.profit.sum()}')
+    print(f'asset: {df_ac.market_val.sum()}')
     # trade = Trade(transaction_list)
     # ZLT = Account('ZLT')
     # PA = Account('PA')
