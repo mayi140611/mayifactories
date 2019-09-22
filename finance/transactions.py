@@ -125,7 +125,7 @@ def add_transactions():
             t[-1] = 0
         r.append(t)
         if t[2] != 'cash':
-            # 每增加一笔feicash，就要加1笔-cash
+            # 每增加一笔not cash，就要加1笔-cash
             r.append([t[0], t[1], 'cash', 1, -t[3]*t[4]*(1+t[5]), 0])
     import pandas as pd
     df = pd.DataFrame(r, columns=cols)
