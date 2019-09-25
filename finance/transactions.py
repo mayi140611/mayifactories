@@ -6,11 +6,13 @@
 @file: base.py
 @time: 2019-09-16 16:51
 """
-import pandas as pd
 import os
 import sys
 sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils/db')
 from pymongo_wrapper import PyMongoWrapper
+
+import pandas as pd
+
 
 class Publisher:
     def __init__(self):
@@ -112,25 +114,34 @@ class Account(Subscriber):
 
 
 def add_transactions():
-    with open('data/transactions.txt') as f:
-        ll = f.readlines()
-    ll = [s.strip()[2:-2].split(', ') for s in ll]
-    mongo = PyMongoWrapper()
-    cols = 'trade_date account target price num fee_rate type'.split()
+    df = pd.read_excel('data/transactions.xlsx')
     r = []
-    for i in ll:
-        # 买卖成本在买入时都算进去，卖出时不算成本
-        t = [datetime.now(), i[3], i[0][:-1], float(i[2]), float(i[1]), 0.003]
-        if t[2] == 'cash' or t[-2] < 0:  # 卖出时不算成本
-            t[-1] = 0
-        r.append(t)
-        if t[2] != 'cash':
-            # 每增加一笔not cash，就要加1笔-cash
-            r.append([t[0], t[1], 'cash', 1, -t[3]*t[4]*(1+t[5]), 0])
-    import pandas as pd
-    df = pd.DataFrame(r, columns=cols)
-    mongo.insertDataframe(df, 'finance', 'transactions')
-
+    for line in df.itertuples():
+        if line.target != 'cash':
+            r.append([line.trade_date, line.account, 'cash', 1, -1 * (line.price * line.num * 1+line.fee_rate), 0])
+    dft = pd.DataFrame(r, columns=df.columns)
+    df = pd.concat([df, dft], ignore_index=True)
+    # with open('data/transactions.txt') as f:
+    #     ll = f.readlines()
+    # ll = [s.strip()[2:-2].split(', ') for s in ll]
+    # cols = 'trade_date account target price num fee_rate'.split()
+    # r = []
+    # for i in ll:
+    #     # 买卖成本在买入时都算进去，卖出时不算成本
+    #     t = [datetime.now(), i[3], i[0][:-1], float(i[2]), float(i[1]), 0.003]
+    #     if t[2] == 'cash' or t[-2] < 0:  # 卖出时不算成本
+    #         t[-1] = 0
+    #     r.append(t)
+    #     if t[2] != 'cash':
+    #         # 每增加一笔not cash，就要加1笔-cash
+    #         r.append([t[0], t[1], 'cash', 1, -t[3]*t[4]*(1+t[5]), 0])
+    # df = pd.DataFrame(r, columns=cols)
+    print(df)
+    if not df.empty:
+        mongo = PyMongoWrapper()
+        mongo.insertDataframe(df, 'finance', 'transactions')
+    else:
+        print('no transactions!')
 
 FILE_DIR = os.path.dirname(os.path.abspath(__file__))
 stock_series = pd.read_pickle(os.path.join(FILE_DIR, 'data/stock_dict.pkl'))
@@ -138,18 +149,49 @@ fund_otc_series = pd.read_pickle(os.path.join(FILE_DIR, 'data/fund_otc_series.pk
 series = stock_series.append(fund_otc_series)
 
 
-def get_last_day_market_val(target):
-    """获取最近一日市值"""
+def get_last_day_market_val(target, tdate):
+    """
+    获取最近一日市值
+    :param target:
+    :param tdate:
+        '20190908'
+    :return:
+    """
     if target == 'cash':
         return datetime.now().date(), 1
     if any([target.endswith('.SZ'), target.endswith('.SH')]):
         tname = target
     else:
         tname = series.loc[target]
+    mongo = PyMongoWrapper()
     table = mongo.getCollection('finance', tname)
-    r = list(mongo.findAll(table, fieldlist=['trade_date', 'close', 'pct_chg'], sort=[('trade_date', -1)], limit=1))[0]
+    r = list(mongo.findAll(table, {'trade_date': {'$lte': datetime.strptime(tdate, '%Y%m%d')}}, fieldlist=['trade_date', 'close', 'pct_chg'], sort=[('trade_date', -1)], limit=1))[0]
     return r['trade_date'].date(), r['close']
     # rlist.append((i[0], r['close'], i[1], r['pct_chg'], g, r['trade_date']))
+
+
+def get_account_val(trans_df, tdate):
+    trans_df = trans_df[:tdate]
+    # 计算截止某日的账户切片
+    df_ac = trans_df.groupby(['account', 'target'])['num', 'cost'].sum()
+    df_ac.reset_index(inplace=True)
+    df_ac['price'] = 0
+    df_ac['tdate'] = 0
+    # 获取某一天的市值
+    for i in trans_df['target'].unique():
+        df_ac.loc[df_ac.target == i, ['tdate', 'price']] = get_last_day_market_val(i, tdate)
+    df_ac['type'] = 'cash'
+    df_ac.loc[(df_ac.account == 'PA') & (df_ac.target != 'cash'), 'type'] = 'STOCK'
+    df_ac.loc[(df_ac.account == 'ZLT') & (df_ac.target != 'cash'), 'type'] = 'FUND'
+    df_ac.loc[(df_ac.account.isin(['TTJ', 'TTA'])) & (df_ac.target != 'cash'), 'type'] = 'OTC_FUND'
+    # print(df_ac)
+    df_ac['market_val'] = df_ac.num * df_ac.price
+    df_ac['profit'] = df_ac['market_val'] - df_ac['cost']
+    # print(df_ac)
+    # print(df_ac.groupby(['account'])['market_val'].sum())
+    # print(df_ac.groupby(['type'])['market_val'].sum())
+    # print(f'profit: {df_ac.profit.sum()}')
+    print(f'asset: {df_ac.market_val.sum()}')
 
 
 if __name__ == '__main__':
@@ -162,31 +204,22 @@ if __name__ == '__main__':
 
 
     df = pd.DataFrame(rs)
-    df['trade_date'] = df['trade_date'].dt.date
+    # df['trade_date'] = df['trade_date'].dt.date
     df.set_index('trade_date', inplace=True)
 
     df['cost'] = df['price'] * df['num'] * (1 + df.fee_rate)
+    get_account_val(df, '20190919')
+    get_account_val(df, '20190920')
+    get_account_val(df, '20190921')
+    get_account_val(df, '20190922')
+    get_account_val(df, '20190923')
+    get_account_val(df, '20190924')
+    get_account_val(df, '20190925')
+    get_account_val(df, '20190926')
 
-    # 计算截止某日的账户切片
-    df_ac = df.groupby(['account', 'target'])['num', 'cost'].sum()
-    df_ac.reset_index(inplace=True)
-    df_ac['price'] = 0
-    df_ac['tdate'] = 0
-    # 获取某一天的市值
-    for i in df['target'].unique():
-        df_ac.loc[df_ac.target==i, ['tdate', 'price']] = get_last_day_market_val(i)
-    df_ac['type'] = 'cash'
-    df_ac.loc[(df_ac.account=='PA') & (df_ac.target!='cash'), 'type'] = 'STOCK'
-    df_ac.loc[(df_ac.account=='ZLT') & (df_ac.target!='cash'), 'type'] = 'FUND'
-    df_ac.loc[(df_ac.account.isin(['TTJ', 'TTA'])) & (df_ac.target!='cash'), 'type'] = 'OTC_FUND'
-    # print(df_ac)
-    df_ac['market_val'] = df_ac.num * df_ac.price
-    df_ac['profit'] = df_ac['market_val'] - df_ac['cost']
-    print(df_ac)
-    print(df_ac.groupby(['account'])['market_val'].sum())
-    print(df_ac.groupby(['type'])['market_val'].sum())
-    print(f'profit: {df_ac.profit.sum()}')
-    print(f'asset: {df_ac.market_val.sum()}')
+
+
+
     # trade = Trade(transaction_list)
     # ZLT = Account('ZLT')
     # PA = Account('PA')
