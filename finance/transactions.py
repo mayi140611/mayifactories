@@ -12,6 +12,7 @@ sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils/db')
 from pymongo_wrapper import PyMongoWrapper
 
 import pandas as pd
+import numpy as np
 
 
 class Publisher:
@@ -180,10 +181,13 @@ def get_account_val(trans_df, tdate):
     # 获取某一天的市值
     for i in trans_df['target'].unique():
         df_ac.loc[df_ac.target == i, ['tdate', 'price']] = get_last_day_market_val(i, tdate)
-    df_ac['type'] = 'cash'
-    df_ac.loc[(df_ac.account == 'PA') & (df_ac.target != 'cash'), 'type'] = 'STOCK'
-    df_ac.loc[(df_ac.account == 'ZLT') & (df_ac.target != 'cash'), 'type'] = 'FUND'
-    df_ac.loc[(df_ac.account.isin(['TTJ', 'TTA'])) & (df_ac.target != 'cash'), 'type'] = 'OTC_FUND'
+    df_ac['type'] = np.where((df_ac.account == 'PA') & (df_ac.target != 'cash'), 'STOCK',
+                             np.where((df_ac.account == 'ZLT') & (df_ac.target != 'cash'), 'FUND',
+                                      np.where((df_ac.account.isin(['TTJ', 'TTA'])) & (df_ac.target != 'cash'), 'OTC_FUND', 'cash')))
+    # df_ac['type'] = 'cash'
+    # df_ac.loc[(df_ac.account == 'PA') & (df_ac.target != 'cash'), 'type'] = 'STOCK'
+    # df_ac.loc[(df_ac.account == 'ZLT') & (df_ac.target != 'cash'), 'type'] = 'FUND'
+    # df_ac.loc[(df_ac.account.isin(['TTJ', 'TTA'])) & (df_ac.target != 'cash'), 'type'] = 'OTC_FUND'
     # print(df_ac)
     df_ac['market_val'] = df_ac.num * df_ac.price
     df_ac['profit'] = df_ac['market_val'] - df_ac['cost']
@@ -191,7 +195,14 @@ def get_account_val(trans_df, tdate):
     # print(df_ac.groupby(['account'])['market_val'].sum())
     # print(df_ac.groupby(['type'])['market_val'].sum())
     # print(f'profit: {df_ac.profit.sum()}')
-    print(f'asset: {df_ac.market_val.sum()}')
+    # s = df_ac.groupby(['type', 'target'])['market_val'].sum()
+    s = df_ac.groupby('account')['market_val'].sum()
+    # s = df_ac.groupby('type')['market_val'].sum()
+    s.loc['TOTAL'] = s.sum()
+    dfr = pd.DataFrame(s).T
+    dfr.index.name = 'date'
+    dfr.index = pd.to_datetime([tdate])
+    return dfr
 
 
 if __name__ == '__main__':
@@ -202,20 +213,25 @@ if __name__ == '__main__':
     cols = 'trade_date account target price num fee_rate'.split()
     rs = mongo.findAll(table, fieldlist=cols, sort=[('trade_date', 1)])
 
+    trans_df = pd.DataFrame(rs)
+    trans_df.set_index('trade_date', inplace=True)
 
-    df = pd.DataFrame(rs)
-    # df['trade_date'] = df['trade_date'].dt.date
-    df.set_index('trade_date', inplace=True)
+    trans_df['cost'] = trans_df['price'] * trans_df['num'] * (1 + trans_df.fee_rate)
+    dfc = pd.DataFrame()
+    dates = pd.date_range('20190921', '20190926', freq='B')
+    for d in dates:
+        d = d.strftime('%Y%m%d')
+        if dfc.empty:
+            dfc = get_account_val(trans_df, d)
+        else:
+            dfc = pd.concat([dfc, get_account_val(trans_df, d)])
+    print(dfc)
+    dfc.plot(subplots=True, figsize=(8, 14))
+    import matplotlib.pyplot as plt
 
-    df['cost'] = df['price'] * df['num'] * (1 + df.fee_rate)
-    get_account_val(df, '20190919')
-    get_account_val(df, '20190920')
-    get_account_val(df, '20190921')
-    get_account_val(df, '20190922')
-    get_account_val(df, '20190923')
-    get_account_val(df, '20190924')
-    get_account_val(df, '20190925')
-    get_account_val(df, '20190926')
+    plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
+    plt.rcParams['axes.unicode_minus'] = False
+    plt.show()
 
 
 
