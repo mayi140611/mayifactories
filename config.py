@@ -1,3 +1,8 @@
+import sys
+sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils/db')
+from pymongo_wrapper import PyMongoWrapper
+mongo = PyMongoWrapper()
+
 LOG_PATH = '/Users/luoyonggui/Documents/logs'
 # 投资组合
 portfolio = {'stock': [
@@ -202,7 +207,9 @@ STOCK_NAMES = [
                '中国石油',
                '山鹰纸业',
                ] # + BANKS + BROKERS + LIQUORS + GOLDS
-
+table = mongo.getCollection('finance', 'stock_basic')
+df = mongo.findAll(table, fieldlist=['name'], returnFmt='df')
+STOCK_NAMES = df.name.tolist()[::-1]
 
 
 
