@@ -45,26 +45,36 @@ from pymongo_wrapper import PyMongoWrapper
 
 class SMA:
     @classmethod
-    def get_all_stock_names(cls):
+    def get_stocks_dict(cls):
         mongo = PyMongoWrapper()
-        table = mongo.getCollection('finance', 'stock_basic')
-        df = mongo.findAll(table, fieldlist=['name'], returnFmt='df')
+        table = mongo.getCollection('finance_n', 'stocks_info')
+        df = mongo.findAll(table, fieldlist=['ts_code', 'name'], returnFmt='df')
         stock_names = df.name.tolist()
-        return stock_names
+        stock_ts_codes = df.ts_code.tolist()
+
+        return dict(zip(stock_names, stock_ts_codes)), dict(zip(stock_ts_codes, stock_names))
+
+    @classmethod
+    def get_stocks_dict_top_n(cls, n, t_date):
+        mongo = PyMongoWrapper()
+        table = mongo.getCollection('finance_n', 'stock_daily_basic')
+        df = mongo.findAll(table, {'trade_date': pd.to_datetime(t_date)}, fieldlist=['ts_code'],
+                           sort=[('rank', 1)], limit=n, returnFmt='df')
+        stock_reverse_dict = cls.get_stocks_dict()[1]
+
+        return df.ts_code.map(lambda c: stock_reverse_dict[c]).tolist()
 
     @classmethod
     def get_hist(cls, name=None, ts_code=None, count=365):
         if not ts_code:
-            import os
-            PROJ_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            stock_series = pd.read_pickle(os.path.join(PROJ_DIR, 'finance/data/stock_dict.pkl'))
-            ts_code = stock_series.loc[name]
+            stocks_dict = cls.get_stocks_dict()[0]
+            ts_code = stocks_dict[name]
         # start_date = datetime.now() - timedelta(days=count)
         mongo = PyMongoWrapper()
-        table = mongo.getCollection('finance', ts_code)
+        table = mongo.getCollection('finance_n', 'stocks_daily')
         # df = mongo.findAll(table, {'trade_date': {'$gte': start_date}},
         #                    fieldlist=['trade_date', 'pct_chg'], returnFmt='df')
-        df = mongo.findAll(table, fieldlist=['trade_date', 'pct_chg'],
+        df = mongo.findAll(table, {'ts_code': ts_code}, fieldlist=['trade_date', 'pct_chg'],
                            sort=[('trade_date', -1)], limit=count, returnFmt='df')
         df.set_index('trade_date', inplace=True)
         df.sort_index(inplace=True)
@@ -73,6 +83,7 @@ class SMA:
         # print(df.head())
         # print(df.tail())
         return df
+
     @classmethod
     def sma_base(cls, name=None, ts_code=None, count=365, fast_ma=8, slow_ma=60):
         """
@@ -111,33 +122,77 @@ class SMA:
         print(f'strat_max_drawdown: {strat_max_drawdown}')
 
     @classmethod
+    def sma_v1(cls, name=None, ts_code=None, count=365, fast_ma=8):
+        """
+        当股价大于fast_ma时买入，低于时卖出
+        """
+        df = cls.get_hist(name, ts_code, count)
+
+        symbol = 'net'
+        data = df
+
+        data['fast_ma'] = data[symbol].rolling(fast_ma).mean()
+        data.dropna(inplace=True)
+
+        data['position'] = np.where(data.net > data['fast_ma'], 1, 0)
+        data['position'] = data['position'].shift(1)  # 因为当天的收益是拿不到的，
+        data.plot(secondary_y='position', figsize=(14, 6))
+        plt.show()
+        data['returns'] = np.log(data[symbol] / data[symbol].shift(1))
+
+        data['strat'] = data['position'] * data['returns']
+
+        data.dropna(inplace=True)
+        data['hold_earnings'] = data[['returns']].cumsum().apply(np.exp)
+        data['strat_earnings'] = data[['strat']].cumsum().apply(np.exp)
+        ax = data[['hold_earnings', 'strat_earnings']].plot(figsize=(14, 6))
+        data['position'].plot(ax=ax, secondary_y='position', style='--', figsize=(14, 6))
+        plt.show()
+        print(np.exp(data[['returns', 'strat']].sum()))
+        print(data[['returns','strat']].std())
+        # 计算最大回撤
+
+        hold_max_drawdown = ffn.calc_max_drawdown(data.hold_earnings)
+        strat_max_drawdown = ffn.calc_max_drawdown(data.strat_earnings)
+        print(f'hold_max_drawdown: {hold_max_drawdown}')
+        print(f'strat_max_drawdown: {strat_max_drawdown}')
+
+    @classmethod
     def stock_select(cls, name=None, ts_code=None, fast_ma=8, slow_ma=60):
         data = cls.get_hist(name, ts_code, slow_ma)
         symbol = 'net'
-        data['fast_ma'] = data[symbol].rolling(fast_ma).mean()
+        # data['fast_ma'] = data[symbol].rolling(fast_ma).mean()
         data['slow_ma'] = data[symbol].rolling(slow_ma).mean()
         print(data.tail())
-        return all([data.iloc[-1].fast_ma < data.iloc[-1].slow_ma,
-                    (data.iloc[-1].slow_ma - data.iloc[-1].fast_ma) < data.iloc[-1].net * 0.01,
-                   data.iloc[-1].fast_ma > data.iloc[-2].fast_ma,  # 短期均线保持向上走势
-                    ])
+        return all([
+            # data.iloc[-1].fast_ma < data.iloc[-1].slow_ma,
+            abs(data.iloc[-1].slow_ma - data.iloc[-1].net) < (data.iloc[-1].net * 0.01),
+            # (data.iloc[-1].slow_ma - data.iloc[-1].fast_ma) < abs(data.iloc[-1].net * 0.01),
+            # data.iloc[-1].fast_ma < data.iloc[-2].fast_ma,  # 短期均线保持向下走势
+            # data.iloc[-1].net > data.iloc[-1].slow_ma,
+            # data.iloc[-1].fast_ma > data.iloc[-2].fast_ma,  # 短期均线保持向上走势
+            # data.iloc[-1].slow_ma > data.iloc[-2].slow_ma,  # 长期均线保持向上走势
+        ])
 
     @classmethod
     def stocks_select(cls, names='all', fast_ma=8, slow_ma=60):
         if names=='all':
-            names = cls.get_all_stock_names()
+            names = cls.get_stocks_dict()[0].keys()
         rs = []
+        print(datetime.now())
+        print(f'股票池容量：{len(names)}')
+        count = 0
+        # import multiprocessing
+        # pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
         for name in names:
-            data = cls.get_hist(name, count=slow_ma)
-            symbol = 'net'
-            data['fast_ma'] = data[symbol].rolling(fast_ma).mean()
-            data['slow_ma'] = data[symbol].rolling(slow_ma).mean()
-            # print(data.tail())
-            result = all([data.iloc[-1].fast_ma < data.iloc[-1].slow_ma,
-                        (data.iloc[-1].slow_ma - data.iloc[-1].fast_ma) < data.iloc[-1].net * 0.01,
-                       data.iloc[-1].fast_ma > data.iloc[-2].fast_ma,  # 短期均线保持向上走势
-                        ])
-            if result:
-                rs.append(name)
+            print(f'{count}, {name}')
+            count += 1
+
+            try:
+                if cls.stock_select(name, fast_ma=fast_ma, slow_ma=slow_ma):
+                    rs.append(name)
+            except Exception as e:
+                print(e, name)
+        print(datetime.now())
         print(f'符合条件的stock num: {len(rs)}')
         return rs

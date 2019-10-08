@@ -12,6 +12,9 @@ sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils/db')
 from pymongo_wrapper import PyMongoWrapper
 
 import pandas as pd
+pd.set_option('display.max_rows', 200)
+pd.set_option('display.max_columns', 100)  # 设置显示数据的最大列数，防止出现省略号…，导致数据显示不全
+pd.set_option('expand_frame_repr', False)  # 当列太多时不自动换行
 import numpy as np
 
 
@@ -165,8 +168,10 @@ def get_last_day_market_val(target, tdate):
     else:
         tname = series.loc[target]
     mongo = PyMongoWrapper()
-    table = mongo.getCollection('finance', tname)
-    r = list(mongo.findAll(table, {'trade_date': {'$lte': datetime.strptime(tdate, '%Y%m%d')}}, fieldlist=['trade_date', 'close', 'pct_chg'], sort=[('trade_date', -1)], limit=1))[0]
+    db_name = 'finance_n'
+    tb_name = 'stocks_daily'
+    table = mongo.getCollection(db_name, tb_name)
+    r = list(mongo.findAll(table, {'ts_code': tname, 'trade_date': {'$lte': datetime.strptime(tdate, '%Y%m%d')}}, fieldlist=['trade_date', 'close', 'pct_chg'], sort=[('trade_date', -1)], limit=1))[0]
     return r['trade_date'].date(), r['close']
     # rlist.append((i[0], r['close'], i[1], r['pct_chg'], g, r['trade_date']))
 
@@ -191,6 +196,7 @@ def get_account_val(trans_df, tdate):
     # print(df_ac)
     df_ac['market_val'] = df_ac.num * df_ac.price
     df_ac['profit'] = df_ac['market_val'] - df_ac['cost']
+    print(df_ac)
     # print(df_ac)
     # print(df_ac.groupby(['account'])['market_val'].sum())
     # print(df_ac.groupby(['type'])['market_val'].sum())
@@ -219,19 +225,20 @@ if __name__ == '__main__':
     trans_df['cost'] = trans_df['price'] * trans_df['num'] * (1 + trans_df.fee_rate)
     dfc = pd.DataFrame()
     dates = pd.date_range('20190921', '20190926', freq='B')
-    for d in dates:
-        d = d.strftime('%Y%m%d')
-        if dfc.empty:
-            dfc = get_account_val(trans_df, d)
-        else:
-            dfc = pd.concat([dfc, get_account_val(trans_df, d)])
+    dfc = get_account_val(trans_df, '20190930')
+    # for d in dates:
+    #     d = d.strftime('%Y%m%d')
+    #     if dfc.empty:
+    #         dfc = get_account_val(trans_df, d)
+    #     else:
+    #         dfc = pd.concat([dfc, get_account_val(trans_df, d)])
     print(dfc)
-    dfc.plot(subplots=True, figsize=(8, 14))
-    import matplotlib.pyplot as plt
-
-    plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
-    plt.rcParams['axes.unicode_minus'] = False
-    plt.show()
+    # dfc.plot(subplots=True, figsize=(8, 14))
+    # import matplotlib.pyplot as plt
+    #
+    # plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
+    # plt.rcParams['axes.unicode_minus'] = False
+    # plt.show()
 
 
 
