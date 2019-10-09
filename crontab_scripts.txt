@@ -1,4 +1,4 @@
 # 每周一至周五21:00执行
 0 22 * * 1-5 source /Users/luoyonggui/.zshrc && cd /Users/luoyonggui/PycharmProjects/mayifactories && sh timed.sh
-0 1 * * 1-5 source /Users/luoyonggui/.zshrc && cd /Users/luoyonggui/PycharmProjects/mayifactories && sh timed.sh
+*/5 10-15 * * 1-5 source /Users/luoyonggui/.zshrc && cd /Users/luoyonggui/PycharmProjects/mayifactories && sh timed.sh
 0 1 * * 2 source /Users/luoyonggui/.zshrc && cd /Users/luoyonggui/PycharmProjects/mayifactories && sh mongodump.sh
