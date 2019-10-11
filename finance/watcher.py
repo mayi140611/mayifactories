@@ -14,7 +14,9 @@ from email_ops import send_email
 
 targets=[
     ('sz000063', 31.77, 'lte'),
-    ('sh600446', 20.92, 'lte'),
+    ('sz000547', 10.46, 'lte'),
+    ('sh600446', 21, 'lte'),
+    ('sh600928', 7.2, 'lte'),
 ]
 
 url = 'http://hq.sinajs.cn/list='

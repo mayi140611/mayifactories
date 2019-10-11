@@ -166,7 +166,9 @@ class SMA:
         print(data.tail())
         return all([
             # data.iloc[-1].fast_ma < data.iloc[-1].slow_ma,
+            data.iloc[-1].slow_ma < data.iloc[-1].net,
             abs(data.iloc[-1].slow_ma - data.iloc[-1].net) < (data.iloc[-1].net * 0.01),
+            # abs(data.iloc[-1].slow_ma - data.iloc[-1].net) < (data.iloc[-1].net * 0.01),
             # (data.iloc[-1].slow_ma - data.iloc[-1].fast_ma) < abs(data.iloc[-1].net * 0.01),
             # data.iloc[-1].fast_ma < data.iloc[-2].fast_ma,  # 短期均线保持向下走势
             # data.iloc[-1].net > data.iloc[-1].slow_ma,
