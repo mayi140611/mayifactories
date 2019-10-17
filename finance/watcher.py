@@ -10,19 +10,33 @@ import requests
 import sys
 sys.path.append('/Users/luoyonggui/PycharmProjects/mayiutils_n1/mayiutils')
 from email_ops import send_email
-
+stock_dict = {
+    '厦门钨业': 'sh600549',
+    '西安银行': 'sh600928',
+    '航天发展': 'sz000547',
+    '中兴通讯': 'sz000063',
+    '首钢股份': 'sz000959',
+    '金证股份': 'sh600446',
+    '山鹰纸业': 'sh600567',
+    '东方航空': 'sh600115',
+    '中信证券': 'sh600030',
+    '亨通光电': 'sh600487',
+}
 
 targets=[
-    ('sz000063', 31.77, 'lte'),
-    ('sz000547', 10.46, 'lte'),
-    ('sh600446', 21, 'lte'),
-    ('sh600928', 7.2, 'lte'),
+    ('中兴通讯', 31.8, 'lte'),
+    ('首钢股份', 3.42, 'lte'),
+    # ('航天发展', 10.46, 'lte'),
+    ('金证股份', 21.14, 'lte'),
+    ('西安银行', 7.2, 'lte'),
+    ('亨通光电', 15.54, 'lte'),
+    # ('厦门钨业', 13.32, 'lte'),
 ]
 
 url = 'http://hq.sinajs.cn/list='
 
 for t in targets:
-    url += t[0] + ','
+    url += stock_dict[t[0]] + ','
 
 r = requests.get(url)
 # print(r.text)
@@ -42,4 +56,4 @@ for i in range(len(targets)):
         rs.append(rr[i])
 
 if rs:
-    send_email('watcher', str(rr))
+    send_email('watcher', str(rs))

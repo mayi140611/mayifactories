@@ -41,13 +41,13 @@ tb_name = 'stocks_daily'
 
 
 # 获取stock_daily_basic
-df = ts.get_daily_basic('20191010')
-print(df.head())
-tb_name = 'stock_daily_basic'
-table = mongo.getCollection(db_name, tb_name)
-# mongo.setUniqueIndex(db_name, tb_name, ['trade_date', 'ts_code'])
-if not df.empty:
-    mongo.insertDataframe(df, db_name, tb_name)
+# df = ts.get_daily_basic('20191010')
+# print(df.head())
+# tb_name = 'stock_daily_basic'
+# table = mongo.getCollection(db_name, tb_name)
+# # mongo.setUniqueIndex(db_name, tb_name, ['trade_date', 'ts_code'])
+# if not df.empty:
+#     mongo.insertDataframe(df, db_name, tb_name)
 
 
 # # 获取场内fund历史数据
@@ -138,14 +138,14 @@ if not df.empty:
 #     if df.shape[0] > 0:
 #         mongo.insertDataframe(df, db_name, tb_name, df_index='trade_date')
 
-# dates = pd.date_range('20191007', '20191010', freq='B')
-# db_name = 'finance_n'
-# tb_name = 'stocks_daily'
-# for date in dates:
-#     print(date.strftime('%Y%m%d'))
-#     df = ts.daily(date.strftime('%Y%m%d'))
-#     if not df.empty:
-#         df.trade_date = pd.to_datetime(df.trade_date)
-#         mongo.insertDataframe(df, db_name, tb_name)
-#     else:
-#         print('df empty!')
+dates = pd.date_range('20191015', '20191016', freq='B')
+db_name = 'finance_n'
+tb_name = 'stocks_daily'
+for date in dates:
+    print(date.strftime('%Y%m%d'))
+    df = ts.daily(date.strftime('%Y%m%d'))
+    if not df.empty:
+        df.trade_date = pd.to_datetime(df.trade_date)
+        mongo.insertDataframe(df, db_name, tb_name)
+    else:
+        print('df empty!')
