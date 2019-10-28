@@ -138,7 +138,7 @@ tb_name = 'stocks_daily'
 #     if df.shape[0] > 0:
 #         mongo.insertDataframe(df, db_name, tb_name, df_index='trade_date')
 
-dates = pd.date_range('20191017', '20191021', freq='B')
+dates = pd.date_range('20191022', '20191023', freq='B')
 db_name = 'finance_n'
 tb_name = 'stocks_daily'
 for date in dates:
